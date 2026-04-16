@@ -2,7 +2,6 @@ import * as Phaser from 'phaser';
 import { ParallaxBackground } from './ParallaxBackground';
 
 const SHIP_THRUST = 150; // N
-const SHIP_TORQUE = 200; // N·m
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.WEBGL,
@@ -21,9 +20,12 @@ const config: Phaser.Types.Core.GameConfig = {
       this.load.image('spaceBg', 'images/space-background.jpg');
 
       const graphics = this.add.graphics();
+      // Рисуем треугольный кораблик (нос направлен вверх)
       graphics.fillStyle(0x4a9eff, 1);
-      graphics.fillTriangle(0, -20, 15, 20, -15, 20);
-      graphics.generateTexture('ship', 40, 40);
+      graphics.fillTriangle(0, -30, -25, 18, 25, 18); // Основной корпус (треугольник)
+      graphics.fillStyle(0x6ab0ff, 1);
+      graphics.fillTriangle(-12, 18, 12, 18, 0, 30);   // Двигатель снизу
+      graphics.generateTexture('ship', 50, 60);
 
       graphics.clear();
       graphics.fillStyle(0xff6600, 1);
@@ -31,25 +33,29 @@ const config: Phaser.Types.Core.GameConfig = {
       graphics.generateTexture('engine', 10, 10);
     },
     create: function (this: Phaser.Scene): void {
-      const bg = new ParallaxBackground(this, 0, 0, 800, 'spaceBg');
+      const bg = new ParallaxBackground(this, 800, 'spaceBg');
 
       playerShip = this.physics.add.image(0, 0, 'ship') as Phaser.Physics.Arcade.Image;
       (playerShip.body as Phaser.Physics.Arcade.Body).setDrag(0.98);
       (playerShip.body as Phaser.Physics.Arcade.Body).setAngularDrag(0.95);
 
-      camera = this.cameras.main;
-      camera.setZoom(1);
+      const cam = this.cameras.main!;
+      camera = cam;
+      cam.setZoom(1);
 
-      cursors = this.input.keyboard.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
+      const cursorsLocal = this.input.keyboard!.createCursorKeys();
+      if (cursorsLocal !== null) {
+        cursors = cursorsLocal as Phaser.Types.Input.Keyboard.CursorKeys;
+      }
 
       createWorldObjects(this);
 
       (this as any)._parallaxBg = bg;
     },
-    update: function (this: Phaser.Scene, _time: number, delta: number): void {
+    update: function (this: Phaser.Scene, deltaTime: number): void {
       if (!playerShip || !camera || !cursors) return;
 
-      handleInput(cursors, delta);
+      handleInput(cursors, deltaTime);
 
       const screenX = playerShip.x - camera.width / 2;
       const screenY = playerShip.y - camera.height * 0.6;
@@ -75,19 +81,19 @@ function handleInput(cursor: Phaser.Types.Input.Keyboard.CursorKeys, delta: numb
 
   // Стрелка вверх — смещение вверх
   if (cursor.up?.isDown) {
-    body.setVelocityY(body.velocityY - thrustPower);
+    body.velocity.y -= thrustPower;
   }
   // Стрелка вниз — смещение вниз
   if (cursor.down?.isDown) {
-    body.setVelocityY(body.velocityY + thrustPower);
+    body.velocity.y += thrustPower;
   }
   // Стрелка влево — смещение влево
   if (cursor.left?.isDown) {
-    body.setVelocityX(body.velocityX - thrustPower);
+    body.velocity.x -= thrustPower;
   }
   // Стрелка вправо — смещение вправо
   if (cursor.right?.isDown) {
-    body.setVelocityX(body.velocityX + thrustPower);
+    body.velocity.x += thrustPower;
   }
 }
 
@@ -95,7 +101,10 @@ function createWorldObjects(scene: Phaser.Scene): void {
   for (let i = 0; i < 50; i++) {
     const x = (Math.random() - 0.5) * 10000;
     const y = (Math.random() - 0.5) * 10000;
-    scene.add.circle(x, y, Math.random() * 3 + 1, 0x8888aa);
+    const star = scene.add.circle(x, y, Math.random() * 3 + 1, 0x8888aa);
+    if (star !== null) {
+      star.setDepth(0);
+    }
   }
 }
 

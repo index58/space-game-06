@@ -20,7 +20,7 @@ class ParallaxBackground {
   private shader: Phaser.GameObjects.Shader;
   private tileSize: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, tileSize: number, textureKey: string) {
+  constructor(scene: Phaser.Scene, tileSize: number, textureKey: string) {
     this.tileSize = tileSize;
 
     const width = scene.cameras.main.width || window.innerWidth;
