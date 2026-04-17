@@ -27,11 +27,8 @@ const config: Phaser.Types.Core.GameConfig = {
       // Загрузка фона космоса
       this.load.image('spaceBg', 'images/space-background.jpg');
 
-      // Создание текстуры корабля (простой треугольник)
-      const graphics = this.add.graphics();
-      graphics.fillStyle(0x4a9eff, 1); // Синий цвет
-      graphics.fillTriangle(0, -20, -15, 20, 15, 20); // Треугольник с вершиной вверх
-      graphics.generateTexture('ship', 30, 40); // Генерация текстуры 30x40 пикселей
+      // Загрузка спрайта корабля из SVG-файла
+      this.load.image('ship', 'images/ship.svg');
     },
     /**
      * Инициализация игровых объектов
