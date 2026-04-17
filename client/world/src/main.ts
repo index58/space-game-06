@@ -39,8 +39,10 @@ const config: Phaser.Types.Core.GameConfig = {
 
       // Создание корабля игрока в центре сцены
       playerShip = this.physics.add.image(0, 0, 'ship') as Phaser.Physics.Arcade.Image;
-      // Настройка затухания скорости (сопротивление)
-      (playerShip.body as Phaser.Physics.Arcade.Body).setDrag(0.98);
+      // Настройка затухания скорости (сопротивление) — линейное торможение
+      (playerShip.body as Phaser.Physics.Arcade.Body).setDrag(50);
+      // Отключаем damping для линейного торможения
+      (playerShip.body as Phaser.Physics.Arcade.Body).useDamping = false;
       // Настройка затухания вращения
       (playerShip.body as Phaser.Physics.Arcade.Body).setAngularDrag(0.95);
 
@@ -108,13 +110,13 @@ function handleInput(cursor: Phaser.Types.Input.Keyboard.CursorKeys): void {
   else if (cursor.down?.isDown) {
     body.acceleration.y = SHIP_THRUST;
   }
-  // Стрелка влево — тяга влево
+  // Стрелка влево — тяга влево (инвертировано, т.к. камера следует за кораблём)
   if (cursor.left?.isDown) {
-    body.acceleration.x = -SHIP_THRUST;
-  }
-  // Стрелка вправо — тяга вправо
-  else if (cursor.right?.isDown) {
     body.acceleration.x = SHIP_THRUST;
+  }
+  // Стрелка вправо — тяга вправо (инвертировано, т.к. камера следует за кораблём)
+  else if (cursor.right?.isDown) {
+    body.acceleration.x = -SHIP_THRUST;
   }
 }
 
