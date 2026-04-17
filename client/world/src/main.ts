@@ -1,113 +1,127 @@
 import * as Phaser from 'phaser';
 import { ParallaxBackground } from './ParallaxBackground';
 
-const SHIP_THRUST = 150; // N
+// Сила тяги корабля (в ньютонах)
+const SHIP_THRUST = 150;
 
+/**
+ * Конфигурация игры Phaser
+ */
 const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.WEBGL,
-  width: window.innerWidth,
-  height: window.innerHeight,
-  backgroundColor: '#0d0d15',
+  type: Phaser.WEBGL, // Рендеринг через WebGL
+  width: window.innerWidth, // Ширина канваса на весь экран
+  height: window.innerHeight, // Высота канваса на весь экран
+  backgroundColor: '#0d0d15', // Тёмно-синий фон космоса
   physics: {
-    default: 'arcade',
+    default: 'arcade', // Используем аркадную физику
     arcade: {
-      gravity: { x: 0, y: 0 },
-      debug: false,
+      gravity: { x: 0, y: 0 }, // Гравитация отсутствует (космос)
+      debug: false, // Отладка физики отключена
     },
   },
   scene: {
+    /**
+     * Загрузка ресурсов и создание текстур
+     */
     preload: function (this: Phaser.Scene): void {
+      // Загрузка фона космоса
       this.load.image('spaceBg', 'images/space-background.jpg');
 
+      // Создание текстуры корабля (простой треугольник)
       const graphics = this.add.graphics();
-      // Рисуем треугольный кораблик (нос направлен вверх)
-      graphics.fillStyle(0x4a9eff, 1);
-      graphics.fillTriangle(0, -30, -25, 18, 25, 18); // Основной корпус (треугольник)
-      graphics.fillStyle(0x6ab0ff, 1);
-      graphics.fillTriangle(-12, 18, 12, 18, 0, 30);   // Двигатель снизу
-      graphics.generateTexture('ship', 50, 60);
-
-      graphics.clear();
-      graphics.fillStyle(0xff6600, 1);
-      graphics.fillCircle(5, 5, 3);
-      graphics.generateTexture('engine', 10, 10);
+      graphics.fillStyle(0x4a9eff, 1); // Синий цвет
+      graphics.fillTriangle(0, -20, -15, 20, 15, 20); // Треугольник с вершиной вверх
+      graphics.generateTexture('ship', 30, 40); // Генерация текстуры 30x40 пикселей
     },
+    /**
+     * Инициализация игровых объектов
+     */
     create: function (this: Phaser.Scene): void {
+      // Создание параллакс-фона
       const bg = new ParallaxBackground(this, 800, 'spaceBg');
 
+      // Создание корабля игрока в центре сцены
       playerShip = this.physics.add.image(0, 0, 'ship') as Phaser.Physics.Arcade.Image;
+      // Настройка затухания скорости (сопротивление)
       (playerShip.body as Phaser.Physics.Arcade.Body).setDrag(0.98);
+      // Настройка затухания вращения
       (playerShip.body as Phaser.Physics.Arcade.Body).setAngularDrag(0.95);
 
+      // Настройка камеры
       const cam = this.cameras.main!;
       camera = cam;
-      cam.setZoom(1);
+      cam.setZoom(1); // Масштаб 1:1
 
+      // Создание обработчика клавиш управления (стрелки)
       const cursorsLocal = this.input.keyboard!.createCursorKeys();
       if (cursorsLocal !== null) {
         cursors = cursorsLocal as Phaser.Types.Input.Keyboard.CursorKeys;
       }
 
-      createWorldObjects(this);
-
+      // Сохранение ссылки на фон для обновления в update
       (this as any)._parallaxBg = bg;
     },
+    /**
+     * Обновление состояния игры каждый кадр
+     * @param deltaTime Время в миллисекундах с последнего кадра
+     */
     update: function (this: Phaser.Scene, deltaTime: number): void {
       if (!playerShip || !camera || !cursors) return;
 
+      // Обработка ввода пользователя
       handleInput(cursors, deltaTime);
 
+      // Вычисление позиции скролла камеры относительно корабля
       const screenX = playerShip.x - camera.width / 2;
       const screenY = playerShip.y - camera.height * 0.6;
 
+      // Прокрутка камеры за кораблём
       camera.scrollX = screenX;
       camera.scrollY = screenY;
 
+      // Обновление параллакс-фона
       const bg = (this as any)._parallaxBg as ParallaxBackground;
       bg?.updateOffset(screenX, screenY);
     },
   },
 };
 
+// Глобальные переменные сцены
 let playerShip: Phaser.Physics.Arcade.Image | null = null;
 let camera: Phaser.Cameras.Scene2D.Camera | null = null;
 let cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
 
+/**
+ * Обработка ввода с клавиатуры для управления кораблём
+ * @param cursor Объект с состоянием клавиш-стрелок
+ * @param delta Время в миллисекундах с последнего кадра
+ */
 function handleInput(cursor: Phaser.Types.Input.Keyboard.CursorKeys, delta: number): void {
   if (!playerShip) return;
 
   const body = playerShip.body as Phaser.Physics.Arcade.Body;
+  // Расчёт силы тяги с учётом времени между кадрами
   const thrustPower = SHIP_THRUST * (delta / 1000);
 
-  // Стрелка вверх — смещение вверх
+  // Стрелка вверх — ускорение вверх
   if (cursor.up?.isDown) {
     body.velocity.y -= thrustPower;
   }
-  // Стрелка вниз — смещение вниз
+  // Стрелка вниз — ускорение вниз
   if (cursor.down?.isDown) {
     body.velocity.y += thrustPower;
   }
-  // Стрелка влево — смещение влево
+  // Стрелка влево — ускорение влево
   if (cursor.left?.isDown) {
     body.velocity.x -= thrustPower;
   }
-  // Стрелка вправо — смещение вправо
+  // Стрелка вправо — ускорение вправо
   if (cursor.right?.isDown) {
     body.velocity.x += thrustPower;
   }
 }
 
-function createWorldObjects(scene: Phaser.Scene): void {
-  for (let i = 0; i < 50; i++) {
-    const x = (Math.random() - 0.5) * 10000;
-    const y = (Math.random() - 0.5) * 10000;
-    const star = scene.add.circle(x, y, Math.random() * 3 + 1, 0x8888aa);
-    if (star !== null) {
-      star.setDepth(0);
-    }
-  }
-}
-
+// Запуск игры после загрузки страницы
 window.addEventListener('load', () => {
   new Phaser.Game(config);
 });
