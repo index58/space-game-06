@@ -62,11 +62,11 @@ const config: Phaser.Types.Core.GameConfig = {
      * Обновление состояния игры каждый кадр
      * @param deltaTime Время в миллисекундах с последнего кадра
      */
-    update: function (this: Phaser.Scene, deltaTime: number): void {
+    update: function (this: Phaser.Scene, _deltaTime: number): void {
       if (!playerShip || !camera || !cursors) return;
 
       // Обработка ввода пользователя
-      handleInput(cursors, deltaTime);
+      handleInput(cursors);
 
       // Вычисление позиции скролла камеры относительно корабля
       const screenX = playerShip.x - camera.width / 2;
@@ -91,30 +91,30 @@ let cursors: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
 /**
  * Обработка ввода с клавиатуры для управления кораблём
  * @param cursor Объект с состоянием клавиш-стрелок
- * @param delta Время в миллисекундах с последнего кадра
  */
-function handleInput(cursor: Phaser.Types.Input.Keyboard.CursorKeys, delta: number): void {
+function handleInput(cursor: Phaser.Types.Input.Keyboard.CursorKeys): void {
   if (!playerShip) return;
 
   const body = playerShip.body as Phaser.Physics.Arcade.Body;
-  // Расчёт силы тяги с учётом времени между кадрами
-  const thrustPower = SHIP_THRUST * (delta / 1000);
 
-  // Стрелка вверх — ускорение вверх
+  // Сбрасываем все ускорения перед применением новых
+  body.setAcceleration(0, 0);
+
+  // Стрелка вверх — тяга вверх
   if (cursor.up?.isDown) {
-    body.velocity.y -= thrustPower;
+    body.acceleration.y = -SHIP_THRUST;
   }
-  // Стрелка вниз — ускорение вниз
-  if (cursor.down?.isDown) {
-    body.velocity.y += thrustPower;
+  // Стрелка вниз — тяга вниз
+  else if (cursor.down?.isDown) {
+    body.acceleration.y = SHIP_THRUST;
   }
-  // Стрелка влево — ускорение влево
+  // Стрелка влево — тяга влево
   if (cursor.left?.isDown) {
-    body.velocity.x -= thrustPower;
+    body.acceleration.x = -SHIP_THRUST;
   }
-  // Стрелка вправо — ускорение вправо
-  if (cursor.right?.isDown) {
-    body.velocity.x += thrustPower;
+  // Стрелка вправо — тяга вправо
+  else if (cursor.right?.isDown) {
+    body.acceleration.x = SHIP_THRUST;
   }
 }
 
