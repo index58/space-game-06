@@ -49,6 +49,24 @@ const config: Phaser.Types.Core.GameConfig = {
       // Настройка камеры
       const cam = this.cameras.main!;
       camera = cam;
+      const syncCameraToShip = (): void => {
+        if (!playerShip || !camera) return;
+
+        const screenX = playerShip.x - camera.width / 2;
+        const screenY = playerShip.y - camera.height * 0.6;
+
+        camera.scrollX = screenX;
+        camera.scrollY = screenY;
+
+        bg.updateOffset(screenX, screenY);
+      };
+
+      // Arcade Physics copies Body coordinates to the GameObject during POST_UPDATE.
+      // Camera scroll must run after that sync, otherwise the camera is one frame behind.
+      this.events.on(Phaser.Scenes.Events.POST_UPDATE, syncCameraToShip);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+        this.events.off(Phaser.Scenes.Events.POST_UPDATE, syncCameraToShip);
+      });
       cam.setZoom(1); // Масштаб 1:1
 
       // Создание обработчика клавиш управления (стрелки)
@@ -57,30 +75,16 @@ const config: Phaser.Types.Core.GameConfig = {
         cursors = cursorsLocal as Phaser.Types.Input.Keyboard.CursorKeys;
       }
 
-      // Сохранение ссылки на фон для обновления в update
-      (this as any)._parallaxBg = bg;
     },
     /**
      * Обновление состояния игры каждый кадр
      * @param deltaTime Время в миллисекундах с последнего кадра
      */
     update: function (this: Phaser.Scene, _deltaTime: number): void {
-      if (!playerShip || !camera || !cursors) return;
+      if (!playerShip || !cursors) return;
 
       // Обработка ввода пользователя
       handleInput(cursors);
-
-      // Вычисление позиции скролла камеры относительно корабля
-      const screenX = playerShip.x - camera.width / 2;
-      const screenY = playerShip.y - camera.height * 0.6;
-
-      // Прокрутка камеры за кораблём
-      camera.scrollX = screenX;
-      camera.scrollY = screenY;
-
-      // Обновление параллакс-фона
-      const bg = (this as any)._parallaxBg as ParallaxBackground;
-      bg?.updateOffset(screenX, screenY);
     },
   },
 };
